@@ -5,15 +5,35 @@ import { useReadContract, useReadContracts } from "wagmi";
 import { Abi } from "viem";
 import StrataForgeAdminABI from "../../../app/components/ABIs/StrataForgeAdminABI.json";
 import StrataForgeFactoryABI from "../../../app/components/ABIs/StrataForgeFactoryABI.json";
+import StrataForgeAirdropFactoryABI from "../../../app/components/ABIs/StrataForgeAirdropFactoryABI.json";
 import AdminDashboardLayout from "./AdminDashboardLayout";
 
 const ADMIN_CONTRACT_ADDRESS =
   "0xBD8e7980DCFA4E41873D90046f77Faa90A068cAd" as const;
 const FACTORY_CONTRACT_ADDRESS =
   "0xEaAf43B8C19B1E0CdEc61C8170A446BAc5F79954" as const;
+const AIRDROP_FACTORY_ADDRESS =
+  "0x195dcF2E5340b5Fd3EC4BDBB94ADFeF09919CC8d" as const;
 
 const adminABI = StrataForgeAdminABI as Abi;
 const factoryABI = StrataForgeFactoryABI as Abi;
+const airdropFactoryABI = StrataForgeAirdropFactoryABI as Abi;
+
+const CHAINLINK_ABI = [
+  {
+    inputs: [],
+    name: "latestRoundData",
+    outputs: [
+      { name: "roundId", type: "uint80" },
+      { name: "answer", type: "int256" },
+      { name: "startedAt", type: "uint256" },
+      { name: "updatedAt", type: "uint256" },
+      { name: "answeredInRound", type: "uint80" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
 
 const AdminDashboard = () => {
   const { address, isConnected } = useWallet();
@@ -21,6 +41,30 @@ const AdminDashboard = () => {
   const [adminIndex, setAdminIndex] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Fetch priceFeed address
+  const { data: contractState, error: contractStateError } = useReadContracts({
+    contracts: [
+      {
+        address: ADMIN_CONTRACT_ADDRESS,
+        abi: adminABI,
+        functionName: "priceFeed",
+      },
+    ],
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
+  });
+
+  // Fetch ETH/USD price from Chainlink
+  const { data: priceData, error: priceError } = useReadContract({
+    address: contractState?.[0]?.result as `0x${string}` | undefined,
+    abi: CHAINLINK_ABI,
+    functionName: "latestRoundData",
+    query: {
+      enabled: isConnected && !!contractState?.[0]?.result,
+      retry: 3,
+      retryDelay: 1000,
+    },
+  });
 
   // Get admin count
   const {
@@ -32,11 +76,7 @@ const AdminDashboard = () => {
     address: ADMIN_CONTRACT_ADDRESS,
     abi: adminABI,
     functionName: "adminCount",
-    query: {
-      enabled: isConnected,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
   // Get contract balance
@@ -48,11 +88,7 @@ const AdminDashboard = () => {
     address: ADMIN_CONTRACT_ADDRESS,
     abi: adminABI,
     functionName: "getBalance",
-    query: {
-      enabled: isConnected,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
   // Get total tokens created
@@ -64,11 +100,19 @@ const AdminDashboard = () => {
     address: FACTORY_CONTRACT_ADDRESS,
     abi: factoryABI,
     functionName: "getTotalTokenCount",
-    query: {
-      enabled: isConnected,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
+  });
+
+  // Get total airdrops created
+  const {
+    data: totalAirdrops,
+    error: totalAirdropsError,
+    isLoading: totalAirdropsLoading,
+  } = useReadContract({
+    address: AIRDROP_FACTORY_ADDRESS,
+    abi: airdropFactoryABI,
+    functionName: "getAirdropCount",
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
   // Get feature fee
@@ -80,14 +124,10 @@ const AdminDashboard = () => {
     address: ADMIN_CONTRACT_ADDRESS,
     abi: adminABI,
     functionName: "featureFee",
-    query: {
-      enabled: isConnected,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
-  // Get airdrop fee tiers (read multiple tiers)
+  // Get airdrop fee tiers
   const airdropTierCalls = React.useMemo(() => {
     return Array.from({ length: 5 }, (_, i) => ({
       address: ADMIN_CONTRACT_ADDRESS as `0x${string}`,
@@ -103,11 +143,7 @@ const AdminDashboard = () => {
     isLoading: airdropFeesLoading,
   } = useReadContracts({
     contracts: airdropTierCalls,
-    query: {
-      enabled: isConnected,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
   // Get proposal counter
@@ -119,22 +155,14 @@ const AdminDashboard = () => {
     address: ADMIN_CONTRACT_ADDRESS,
     abi: adminABI,
     functionName: "proposalCounter",
-    query: {
-      enabled: isConnected,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
-  // Suppress unused variable warning for proposalCounter
   void proposalCounter;
 
   // Create array of admin read calls
   const adminChecks = React.useMemo(() => {
     if (!adminCount || !isConnected || !adminCountSuccess) return [];
-
     const count = Number(adminCount);
-    console.log("Creating admin checks for count:", count);
-
     return Array.from({ length: count }, (_, i) => ({
       address: ADMIN_CONTRACT_ADDRESS as `0x${string}`,
       abi: adminABI,
@@ -150,11 +178,7 @@ const AdminDashboard = () => {
     isSuccess: adminAddressesSuccess,
   } = useReadContracts({
     contracts: adminChecks,
-    query: {
-      enabled: adminChecks.length > 0,
-      retry: 3,
-      retryDelay: 1000,
-    },
+    query: { enabled: adminChecks.length > 0, retry: 3, retryDelay: 1000 },
   });
 
   // Check admin status
@@ -165,12 +189,6 @@ const AdminDashboard = () => {
       !adminAddresses ||
       adminAddresses.length === 0
     ) {
-      console.log("Admin check conditions not met:", {
-        address: !!address,
-        adminAddressesSuccess,
-        adminAddressesLength: adminAddresses?.length || 0,
-      });
-
       if (!adminCountLoading && !adminAddressesLoading && adminCountSuccess) {
         setLoading(false);
       }
@@ -180,16 +198,10 @@ const AdminDashboard = () => {
     let isAdminUser = false;
     let userAdminIndex = null;
 
-    console.log("Checking admin addresses:", adminAddresses);
-
     for (let i = 0; i < adminAddresses.length; i++) {
       const result = adminAddresses[i];
-      console.log(`Admin check ${i}:`, result);
-
-      if (result && result.status === "success" && result.result) {
+      if (result?.status === "success" && result.result) {
         const adminAddress = result.result as string;
-        console.log(`Admin ${i}:`, adminAddress);
-
         if (
           adminAddress &&
           adminAddress.toLowerCase() === address.toLowerCase()
@@ -198,13 +210,9 @@ const AdminDashboard = () => {
           userAdminIndex = i;
           break;
         }
-      } else if (result && result.status === "failure") {
-        console.error(`Failed to fetch admin ${i}:`, result.error);
       }
     }
 
-    console.log("Connected Address:", address);
-    console.log("Is Admin:", isAdminUser);
     setIsAdmin(isAdminUser);
     setAdminIndex(userAdminIndex);
     setLoading(false);
@@ -220,52 +228,31 @@ const AdminDashboard = () => {
   // Handle errors
   useEffect(() => {
     const errors: string[] = [];
-
-    if (adminCountError) {
-      console.error("Admin count error:", adminCountError);
-      errors.push("Failed to load admin count");
-    }
-    if (balanceError) {
-      console.error("Balance error:", balanceError);
-      errors.push("Failed to load contract balance");
-    }
-    if (totalTokensError) {
-      console.error("Total tokens error:", totalTokensError);
-      errors.push("Failed to load total tokens");
-    }
-    if (adminAddressesError) {
-      console.error("Admin addresses error:", adminAddressesError);
-      errors.push("Failed to load admin addresses");
-    }
-    if (featureFeeError) {
-      console.error("Feature fee error:", featureFeeError);
-      errors.push("Failed to load feature fee");
-    }
-    if (airdropFeesError) {
-      console.error("Airdrop fees error:", airdropFeesError);
-      errors.push("Failed to load airdrop fees");
-    }
-    if (proposalCounterError) {
-      console.error("Proposal counter error:", proposalCounterError);
-      errors.push("Failed to load proposal counter");
-    }
-
-    // Only set error if no data was successfully loaded
+    if (adminCountError) errors.push("Failed to load admin count");
+    if (balanceError) errors.push("Failed to load contract balance");
+    if (totalTokensError) errors.push("Failed to load total tokens");
+    if (totalAirdropsError) errors.push("Failed to load total airdrops");
+    if (adminAddressesError) errors.push("Failed to load admin addresses");
+    if (featureFeeError) errors.push("Failed to load feature fee");
+    if (airdropFeesError) errors.push("Failed to load airdrop fees");
+    if (proposalCounterError) errors.push("Failed to load proposal counter");
+    if (contractStateError) errors.push("Failed to load contract state");
+    if (priceError) errors.push("Failed to load ETH/USD price");
     if (errors.length > 0 && !adminAddressesSuccess && !adminCountSuccess) {
       setError(errors.join(", "));
     } else {
       setError("");
     }
 
-    // Clear loading if all queries are complete
     if (
       !adminCountLoading &&
       !balanceLoading &&
       !totalTokensLoading &&
+      !totalAirdropsLoading &&
       !adminAddressesLoading &&
       !featureFeeLoading &&
-      !proposalCounterLoading &&
-      !airdropFeesLoading
+      !airdropFeesLoading &&
+      !proposalCounterLoading
     ) {
       setLoading(false);
     }
@@ -273,17 +260,21 @@ const AdminDashboard = () => {
     adminCountError,
     balanceError,
     totalTokensError,
+    totalAirdropsError,
     adminAddressesError,
     featureFeeError,
     airdropFeesError,
     proposalCounterError,
+    contractStateError,
+    priceError,
     adminCountLoading,
     balanceLoading,
     totalTokensLoading,
+    totalAirdropsLoading,
     adminAddressesLoading,
     featureFeeLoading,
-    proposalCounterLoading,
     airdropFeesLoading,
+    proposalCounterLoading,
     adminAddressesSuccess,
     adminCountSuccess,
   ]);
@@ -292,36 +283,61 @@ const AdminDashboard = () => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading) {
-        console.warn("Loading timeout reached, setting loading to false");
         setError("Loading timed out. Please try again.");
         setLoading(false);
       }
     }, 10000);
-
     return () => clearTimeout(timeout);
   }, [loading]);
 
   // Format balance
   const formatBalance = (balanceWei: bigint | undefined) => {
-    if (!balanceWei) return "0";
+    if (!balanceWei) return { eth: "0", usd: "0" };
     try {
-      const ether = Number(balanceWei) / Math.pow(10, 18);
-      return ether.toFixed(4);
+      const eth = (Number(balanceWei) / 1e18).toFixed(4);
+      const ethPrice =
+        priceData && priceData[1] ? Number(priceData[1]) / 1e8 : 0;
+      const usd = ethPrice
+        ? ((Number(balanceWei) / 1e18) * ethPrice).toFixed(2)
+        : "N/A";
+      return { eth, usd };
     } catch (error) {
       console.error("Error formatting balance:", error);
-      return "0";
+      return { eth: "0", usd: "0" };
     }
   };
 
   // Format feature fee (USD with 8 decimals)
   const formatFeatureFee = (feeUSD: bigint | undefined) => {
-    if (!feeUSD) return "0";
+    if (!feeUSD) return { usd: "0", eth: "0" };
     try {
-      const fee = Number(feeUSD) / Math.pow(10, 8);
-      return fee.toFixed(2);
+      const usd = (Number(feeUSD) / 1e8).toFixed(2);
+      const ethPrice =
+        priceData && priceData[1] ? Number(priceData[1]) / 1e8 : 0;
+      const eth = ethPrice
+        ? (Number(feeUSD) / 1e8 / ethPrice).toFixed(6)
+        : "N/A";
+      return { usd, eth };
     } catch (error) {
       console.error("Error formatting feature fee:", error);
-      return "0";
+      return { usd: "0", eth: "0" };
+    }
+  };
+
+  // Format airdrop fee
+  const formatAirdropFee = (feeUSD: bigint | undefined) => {
+    if (!feeUSD) return { usd: "0", eth: "0" };
+    try {
+      const usd = (Number(feeUSD) / 1e8).toFixed(2);
+      const ethPrice =
+        priceData && priceData[1] ? Number(priceData[1]) / 1e8 : 0;
+      const eth = ethPrice
+        ? (Number(feeUSD) / 1e8 / ethPrice).toFixed(6)
+        : "N/A";
+      return { usd, eth };
+    } catch (error) {
+      console.error("Error formatting airdrop fee:", error);
+      return { usd: "0", eth: "0" };
     }
   };
 
@@ -698,7 +714,7 @@ const AdminDashboard = () => {
           <h2 className="font-poppins font-semibold text-xl md:text-2xl mb-6">
             Platform Overview
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <StatsCard
               icon={
                 <svg
@@ -716,7 +732,9 @@ const AdminDashboard = () => {
                 </svg>
               }
               title="Contract Balance"
-              value={`${formatBalance(balance as bigint)} ETH`}
+              value={`${formatBalance(balance as bigint).eth} ETH / $${
+                formatBalance(balance as bigint).usd
+              }`}
               subtitle="Available Funds"
               gradient="from-green-500 to-emerald-600"
             />
@@ -762,6 +780,27 @@ const AdminDashboard = () => {
               subtitle="Created on Platform"
               gradient="from-purple-500 to-pink-600"
             />
+            <StatsCard
+              icon={
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7v-2a3 3 0 005.356-1.857M17 20c0-2.5-3.5-4.5-5-4.5s-5 2-5 4.5m10-12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              }
+              title="Total Airdrops"
+              value={totalAirdrops ? totalAirdrops.toString() : "0"}
+              subtitle="Created on Platform"
+              gradient="from-cyan-500 to-teal-600"
+            />
           </div>
 
           {/* Feature & Airdrop Fees - Full Width Row */}
@@ -789,7 +828,6 @@ const AdminDashboard = () => {
                     Feature & Airdrop Fees
                   </h3>
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Feature Fee Section */}
                   <div className="p-4">
@@ -800,11 +838,12 @@ const AdminDashboard = () => {
                       Per token creation
                     </p>
                     <p className="text-2xl font-bold text-green-400">
-                      ${formatFeatureFee(featureFee as bigint)}
+                      ${formatFeatureFee(featureFee as bigint).usd}
                     </p>
-                    <p className="text-xs text-gray-500">USD</p>
+                    <p className="text-xs text-gray-500">
+                      {formatFeatureFee(featureFee as bigint).eth} ETH
+                    </p>
                   </div>
-
                   {/* Airdrop Fees Section */}
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -814,13 +853,12 @@ const AdminDashboard = () => {
                       <p className="text-sm text-gray-400">Recipient → Fee</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {/* Paid tiers */}
                       {airdropFeeTiers &&
                         airdropFeeTiers.map((tier, index) => {
                           if (tier?.status === "success" && tier.result) {
                             const [minRecipients, maxRecipients, feeUSD] =
                               tier.result as [bigint, bigint, bigint];
-                            const fee = Number(feeUSD) / Math.pow(10, 8);
+                            const { usd, eth } = formatAirdropFee(feeUSD);
                             const min = Number(minRecipients).toLocaleString();
                             const max =
                               maxRecipients ===
@@ -858,7 +896,7 @@ const AdminDashboard = () => {
                                   {min} - {max} :
                                 </span>
                                 <span className="text-xs font-bold text-orange-400">
-                                  ${fee.toFixed(2)}
+                                  ${usd} ({eth} ETH)
                                 </span>
                               </div>
                             );
