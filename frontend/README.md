@@ -34,8 +34,8 @@ Forge simplifies blockchain interactions, making token deployment accessible to 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Strataforge/frontend.git
-   cd Forge
+   git clone https://github.com/thebabalola/forge.git
+   cd forge/frontend
    ```
 
 2. Install dependencies:
