@@ -1,151 +1,136 @@
-# Forge
+# SmartX — Frontend
 
+A modern Next.js frontend for SmartX - a decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation. Built with TypeScript, Tailwind CSS, and wagmi for Base Mainnet.
 
-Forge is a no-code, unified platform that empowers creators, businesses, and communities to deploy tokens, manage campaigns, and distribute airdrops without requiring blockchain development expertise.
+## Overview
 
-## 🚀 Project Overview
+SmartX is a comprehensive DeFi platform that allows users to:
 
-Forge simplifies blockchain interactions, making token deployment accessible to non-technical users while providing powerful features for advanced users. Our platform aims to democratize token creation and campaign management, reducing barriers to entry in the Web3 space while maintaining security and flexibility.
+- **Create Multiple Vaults**: Each user can create multiple personal ERC-4626 compliant vaults
+- **Automated Yield Generation**: Deploy assets to DeFi protocols (Aave, Compound, Uniswap) automatically
+- **ERC-4626 Standard**: Industry-standard tokenized vault interface for maximum interoperability
+- **Share-Based Ownership**: Transferable ERC-20 vault shares representing ownership
+- **Protocol Allocations**: Configure how assets are distributed across different DeFi protocols
 
-### Key Features
+### Multi-Vault Management
 
-- One-click deployment of multiple token standards (ERC-20, ERC-721, ERC-1155)
-- Integrated airdrop and campaign management system
-- Support for specialized tokens (memecoins, stablecoins)
-- Web3-native user experience with Web2 simplicity
+- **Create multiple personal vaults** for different strategies or assets
+- **ERC-4626 compliant vaults** with standardized interface
+- **Track all vaults** in a unified dashboard
+- **Manage vault configurations** individually
 
-## 📋 Technology Stack
+### Vault Operations
 
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS, Framer Motion
-- **Smart Contracts**: Solidity
-- **Web3 Integration**: ethers.js / web3.js
-- **Styling**: Tailwind CSS
-- **Animation**: Framer Motion
+- **Deposit assets** into vaults and receive share tokens
+- **Withdraw assets** by redeeming vault shares
+- **Transfer vault shares** as ERC-20 tokens
+- **Configure protocol allocations** (Aave, Compound, Uniswap)
 
-## 🛠️ Getting Started
+### Automated Yield Generation
 
-### Prerequisites
+- **Multi-protocol deployment** to DeFi protocols
+- **Strategy configuration** for each vault
+- **Real-time performance tracking**
+- **Yield harvesting** and compounding
 
-- Node.js (v16.x or later)
-- npm or yarn
-- MetaMask or other Web3 wallet (for testing)
+Built for Ethereum-compatible chains, with primary deployment on Base Mainnet.
 
-### Installation
+## Tech Stack
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/thebabalola/forge.git
-   cd forge/frontend
-   ```
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Web3:** wagmi, viem, Reown AppKit (WalletConnect)
+- **State Management:** React Hooks
 
-2. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+## Design System
 
-3. Create a `.env.local` file in the root directory and add the necessary environment variables:
-   ```
-   NEXT_PUBLIC_RPC_URL=your_rpc_url
-   NEXT_PUBLIC_CHAIN_ID=1
-   # Add other required environment variables
-   ```
+### Color Scheme
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+The SmartX frontend uses a sophisticated color palette featuring:
+- **Primary Colors:** Shades of red for primary actions and branding
+- **Neutral Colors:** Black, grey, and white for backgrounds, text, and UI elements
+- **Accent Colors:** Red variations for highlights and interactive elements
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This color scheme creates a modern, professional, and visually appealing interface that reflects the platform's DeFi focus.
 
-## 🧪 Testing
-
-Run the test suite:
+## Quick Start
 
 ```bash
-npm test
-# or
-yarn test
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
 ```
 
-## 🔄 Deployment
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-This project is configured to be deployed to Vercel by default:
+## Development
 
-1. Push your code to a GitHub repository
-2. Connect your repository to Vercel
-3. Configure environment variables in the Vercel dashboard
-4. Deploy
+```bash
+# Type checking
+npm run type-check
 
-For other deployment methods, refer to the [Next.js deployment documentation](https://nextjs.org/docs/deployment).
+# Linting
+npm run lint
 
-## 🗂️ Project Structure
-
-```
-/
-├── components/        # React components
-├── pages/             # Application pages
-├── public/            # Static assets
-├── styles/            # Global styles
-├── lib/               # Utility functions
-├── hooks/             # Custom React hooks
-├── contracts/         # Smart contracts
-├── types/             # TypeScript type definitions
-└── ...
+# Build for production
+npm run build
 ```
 
-## 🎯 Target Audience
+## Project Structure
 
-- Web3 Entrepreneurs
-- Marketing Teams
-- NFT Creators
-- DeFi Developers
+```
+smartx-frontend/
+├── app/              # Next.js app router pages
+│   ├── vaults/      # Multi-vault management interface
+│   ├── create/      # Vault creation page
+│   ├── dashboard/   # User dashboard with all vaults
+│   └── admin/       # Admin panel (if applicable)
+├── components/       # React components
+│   ├── vaults/      # Vault-related components
+│   ├── shared/      # Shared UI components
+│   └── layout/      # Layout components
+├── config/          # Wagmi and adapter configuration
+├── lib/             # Utilities and contract helpers
+│   ├── abi/         # Contract ABIs
+│   ├── contracts.ts # Contract interaction functions
+│   └── utils.ts     # Helper utilities
+└── hooks/           # Custom React hooks
+    ├── useVaultFactory.ts
+    └── useUserVault.ts
+```
 
-## 🔮 Roadmap
+## Contributing
 
-- **Q3 2025**: Phase 1 launch with core functionality
-- **Q4 2025**: Expanded blockchain support and advanced features
-- **Q1 2026**: DAO governance tools and templates marketplace
-- **Q2 2026**: Educational platform and consulting services
+We welcome contributions! To get started:
 
-## 👥 Contributing
+1. **Pick an issue** from [`ISSUES.md`](./ISSUES.md)
+2. **Create a branch** using the issue number: `issue/<number>-short-description`
+3. **Implement your changes** following the issue's acceptance criteria
+4. **Submit a PR** with the issue number in the title/description
 
-We welcome contributions to Forge! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to proceed.
+When pushing your changes, include the issue number or title in your commit messages.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## Environment Variables
 
-## 📄 License
+Create a `.env.local` file:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```env
+NEXT_PUBLIC_REOWN_PROJECT_ID=your_project_id
+NEXT_PUBLIC_VAULT_FACTORY_ADDRESS=0x...
+NEXT_PUBLIC_NETWORK=base
+```
 
-## 📞 Contact
+**Note:** Contract addresses will be provided after deployment to Base Mainnet.
 
-For questions or support, please reach out to:
+## Network Configuration
 
-- Email: support@Forge.io
-- Twitter: [@Forge](https://twitter.com/Forge)
-- Discord: [Forge Community](https://discord.gg/Forge)
+- **Network:** Base Mainnet
+- **Chain ID:** 8453
+- **Explorer:** [BaseScan](https://basescan.org/)
 
-## 🙏 Acknowledgments
+## License
 
-- [OpenZeppelin](https://openzeppelin.com/) for secure smart contract libraries
-- [Ethereum Foundation](https://ethereum.org/) for documentation and resources
-- All our early testers and contributors
-
----
-
---- /dashboard/token-creator/create-tokens
-
----
-
-**Forge** - Democratizing Token Creation | Launching Q3 2025
-
-
-
+See the main project LICENSE file.
