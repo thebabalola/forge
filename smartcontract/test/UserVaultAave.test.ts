@@ -1,6 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { UserVault, MockERC20, ChainlinkMock, MockAaveLendingPool, VaultFactory } from "../typechain-types";
+import {
+  UserVault,
+  MockERC20,
+  ChainlinkMock,
+  MockAaveLendingPool,
+  VaultFactory,
+} from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("UserVault - Aave Integration", function () {
@@ -14,8 +20,6 @@ describe("UserVault - Aave Integration", function () {
   let vaultFactory: VaultFactory;
 
   const INITIAL_MINT = ethers.parseEther("10000");
-  const VAULT_NAME = "ForgeX Vault Token";
-  const VAULT_SYMBOL = "svToken";
   const depositAmount = ethers.parseEther("1000");
 
   beforeEach(async function () {
@@ -31,28 +35,35 @@ describe("UserVault - Aave Integration", function () {
     await asset.mint(user2.address, INITIAL_MINT);
 
     // Deploy ChainlinkMock (2000 USDC/USD, 8 decimals)
-    const ChainlinkMockFactory = await ethers.getContractFactory("ChainlinkMock");
+    const ChainlinkMockFactory =
+      await ethers.getContractFactory("ChainlinkMock");
     priceFeed = await ChainlinkMockFactory.deploy(200000000000, 8); // $2000
     await priceFeed.waitForDeployment();
 
     // Deploy mock Aave Lending Pool
-    const MockAaveLendingPoolFactory = await ethers.getContractFactory("MockAaveLendingPool");
+    const MockAaveLendingPoolFactory = await ethers.getContractFactory(
+      "MockAaveLendingPool",
+    );
     mockAaveLendingPool = await MockAaveLendingPoolFactory.deploy();
     await mockAaveLendingPool.waitForDeployment();
 
     // Deploy VaultFactory
-    const VaultFactoryContract = await ethers.getContractFactory("VaultFactory");
+    const VaultFactoryContract =
+      await ethers.getContractFactory("VaultFactory");
     vaultFactory = await VaultFactoryContract.deploy(owner.address);
     await vaultFactory.waitForDeployment();
 
     // Set Aave address in factory
-    await vaultFactory.connect(owner).setAaveAddress(await mockAaveLendingPool.getAddress());
+    await vaultFactory
+      .connect(owner)
+      .setAaveAddress(await mockAaveLendingPool.getAddress());
 
     // Create vault via factory
     await vaultFactory.connect(user1).registerUser("testuser", "test bio");
-    const tx = await vaultFactory.connect(user1).createVault(await asset.getAddress());
-    const receipt = await tx.wait();
-    
+    await vaultFactory
+      .connect(user1)
+      .createVault(await asset.getAddress());
+
     // Extract vault address from event
     const vaultAddress = await vaultFactory.getUserVaults(user1.address);
     vault = await ethers.getContractAt("UserVault", vaultAddress[0]);
@@ -62,7 +73,12 @@ describe("UserVault - Aave Integration", function () {
     await vault.connect(user1).deposit(depositAmount, user1.address);
 
     // Approve assets to Aave for vault
-    await asset.connect(owner).approve(await mockAaveLendingPool.getAddress(), ethers.parseEther("100000"));
+    await asset
+      .connect(owner)
+      .approve(
+        await mockAaveLendingPool.getAddress(),
+        ethers.parseEther("100000"),
+      );
   });
 
   describe("Aave Deployment", function () {
@@ -81,10 +97,10 @@ describe("UserVault - Aave Integration", function () {
 
     it("Should track Aave deposits correctly", async function () {
       const deployAmount = ethers.parseEther("300");
-      
+
       await vault.connect(user1).deployToAave(deployAmount);
       const aaveBalance = await vault.getAaveBalance();
-      
+
       expect(aaveBalance).to.equal(deployAmount);
     });
 
@@ -103,16 +119,18 @@ describe("UserVault - Aave Integration", function () {
 
     it("Should revert deployment with zero amount", async function () {
       await expect(
-        vault.connect(user1).deployToAave(0)
+        vault.connect(user1).deployToAave(0),
       ).to.be.revertedWithCustomError(vault, "InvalidAmount");
     });
 
     it("Should revert deployment when Aave address not set", async function () {
       // Create new vault without Aave address
       await vaultFactory.connect(user2).registerUser("user2", "user2 bio");
-      const tx = await vaultFactory.connect(user2).createVault(await asset.getAddress());
+      const tx = await vaultFactory
+        .connect(user2)
+        .createVault(await asset.getAddress());
       await tx.wait();
-      
+
       const vaults = await vaultFactory.getUserVaults(user2.address);
       const newVault = await ethers.getContractAt("UserVault", vaults[0]);
 
@@ -121,33 +139,32 @@ describe("UserVault - Aave Integration", function () {
 
       const deployAmount = ethers.parseEther("100");
       await expect(
-        newVault.connect(user2).deployToAave(deployAmount)
+        newVault.connect(user2).deployToAave(deployAmount),
       ).to.be.revertedWithCustomError(vault, "ProtocolAddressNotSet");
     });
 
     it("Should revert deployment with insufficient balance", async function () {
       const deployAmount = ethers.parseEther("5000"); // More than deposited
-      
+
       await expect(
-        vault.connect(user1).deployToAave(deployAmount)
+        vault.connect(user1).deployToAave(deployAmount),
       ).to.be.revertedWithCustomError(vault, "InsufficientBalance");
     });
 
     it("Should revert deployment if not owner", async function () {
       const deployAmount = ethers.parseEther("100");
-      
-      await expect(
-        vault.connect(user2).deployToAave(deployAmount)
-      ).to.be.reverted; // Should fail ownership check
+
+      await expect(vault.connect(user2).deployToAave(deployAmount)).to.be
+        .reverted; // Should fail ownership check
     });
 
     it("Should revert deployment when vault is paused", async function () {
       const deployAmount = ethers.parseEther("100");
-      
+
       await vault.connect(user1).pause();
-      
+
       await expect(
-        vault.connect(user1).deployToAave(deployAmount)
+        vault.connect(user1).deployToAave(deployAmount),
       ).to.be.revertedWithCustomError(vault, "EnforcedPause");
     });
   });
@@ -175,17 +192,17 @@ describe("UserVault - Aave Integration", function () {
 
     it("Should update Aave balance after withdrawal", async function () {
       const withdrawAmount = ethers.parseEther("200");
-      
+
       await vault.connect(user1).withdrawFromAave(withdrawAmount);
       const aaveBalance = await vault.getAaveBalance();
-      
+
       expect(aaveBalance).to.equal(deployAmount - withdrawAmount);
     });
 
     it("Should allow full withdrawal from Aave", async function () {
       await vault.connect(user1).withdrawFromAave(deployAmount);
       const aaveBalance = await vault.getAaveBalance();
-      
+
       expect(aaveBalance).to.equal(0);
     });
 
@@ -199,12 +216,14 @@ describe("UserVault - Aave Integration", function () {
 
       await vault.connect(user1).withdrawFromAave(withdrawAmount2);
       aaveBalance = await vault.getAaveBalance();
-      expect(aaveBalance).to.equal(deployAmount - withdrawAmount1 - withdrawAmount2);
+      expect(aaveBalance).to.equal(
+        deployAmount - withdrawAmount1 - withdrawAmount2,
+      );
     });
 
     it("Should revert withdrawal with zero amount", async function () {
       await expect(
-        vault.connect(user1).withdrawFromAave(0)
+        vault.connect(user1).withdrawFromAave(0),
       ).to.be.revertedWithCustomError(vault, "InvalidAmount");
     });
 
@@ -214,33 +233,32 @@ describe("UserVault - Aave Integration", function () {
 
       const withdrawAmount = ethers.parseEther("100");
       await expect(
-        vault.connect(user1).withdrawFromAave(withdrawAmount)
+        vault.connect(user1).withdrawFromAave(withdrawAmount),
       ).to.be.revertedWithCustomError(vault, "ProtocolAddressNotSet");
     });
 
     it("Should revert withdrawal with insufficient Aave balance", async function () {
       const withdrawAmount = ethers.parseEther("1000"); // More than deployed
-      
+
       await expect(
-        vault.connect(user1).withdrawFromAave(withdrawAmount)
+        vault.connect(user1).withdrawFromAave(withdrawAmount),
       ).to.be.revertedWithCustomError(vault, "InsufficientBalance");
     });
 
     it("Should revert withdrawal if not owner", async function () {
       const withdrawAmount = ethers.parseEther("100");
-      
-      await expect(
-        vault.connect(user2).withdrawFromAave(withdrawAmount)
-      ).to.be.reverted; // Should fail ownership check
+
+      await expect(vault.connect(user2).withdrawFromAave(withdrawAmount)).to.be
+        .reverted; // Should fail ownership check
     });
 
     it("Should revert withdrawal when vault is paused", async function () {
       const withdrawAmount = ethers.parseEther("100");
-      
+
       await vault.connect(user1).pause();
-      
+
       await expect(
-        vault.connect(user1).withdrawFromAave(withdrawAmount)
+        vault.connect(user1).withdrawFromAave(withdrawAmount),
       ).to.be.revertedWithCustomError(vault, "EnforcedPause");
     });
   });
@@ -253,20 +271,20 @@ describe("UserVault - Aave Integration", function () {
 
     it("Should return correct balance after deployment", async function () {
       const deployAmount = ethers.parseEther("350");
-      
+
       await vault.connect(user1).deployToAave(deployAmount);
       const aaveBalance = await vault.getAaveBalance();
-      
+
       expect(aaveBalance).to.equal(deployAmount);
     });
 
     it("Should return correct balance after withdrawal", async function () {
       const deployAmount = ethers.parseEther("500");
       const withdrawAmount = ethers.parseEther("200");
-      
+
       await vault.connect(user1).deployToAave(deployAmount);
       await vault.connect(user1).withdrawFromAave(withdrawAmount);
-      
+
       const aaveBalance = await vault.getAaveBalance();
       expect(aaveBalance).to.equal(deployAmount - withdrawAmount);
     });
@@ -278,7 +296,7 @@ describe("UserVault - Aave Integration", function () {
       // Call getAaveBalance multiple times - should return same value
       const balance1 = await vault.getAaveBalance();
       const balance2 = await vault.getAaveBalance();
-      
+
       expect(balance1).to.equal(balance2);
       expect(balance1).to.equal(deployAmount);
     });
@@ -301,7 +319,9 @@ describe("UserVault - Aave Integration", function () {
     it("Should handle deployment to Aave before any user deposits", async function () {
       // Create new vault
       await vaultFactory.connect(user2).registerUser("user2", "bio");
-      const tx = await vaultFactory.connect(user2).createVault(await asset.getAddress());
+      const tx = await vaultFactory
+        .connect(user2)
+        .createVault(await asset.getAddress());
       await tx.wait();
 
       const vaults = await vaultFactory.getUserVaults(user2.address);
@@ -309,7 +329,7 @@ describe("UserVault - Aave Integration", function () {
 
       // Try to deploy to Aave (should fail - no balance)
       await expect(
-        newVault.connect(user2).deployToAave(ethers.parseEther("100"))
+        newVault.connect(user2).deployToAave(ethers.parseEther("100")),
       ).to.be.revertedWithCustomError(vault, "InsufficientBalance");
     });
 
@@ -333,7 +353,7 @@ describe("UserVault - Aave Integration", function () {
 
     it("Should maintain vault state during Aave operations", async function () {
       const deployAmount = ethers.parseEther("400");
-      
+
       const userSharesBefore = await vault.balanceOf(user1.address);
       const totalAssetsBefore = await vault.totalAssets();
 
@@ -349,8 +369,6 @@ describe("UserVault - Aave Integration", function () {
     });
 
     it("Should support concurrent Aave deployments and withdrawals", async function () {
-      const deployAmount = ethers.parseEther("500");
-
       // First deployment
       await vault.connect(user1).deployToAave(ethers.parseEther("200"));
       let aaveBalance = await vault.getAaveBalance();
@@ -388,7 +406,9 @@ describe("UserVault - Aave Integration", function () {
       const newAllocation = ethers.parseEther("400");
 
       // Set and deploy initial allocation
-      await vault.connect(user1).setProtocolAllocation("Aave", initialAllocation);
+      await vault
+        .connect(user1)
+        .setProtocolAllocation("Aave", initialAllocation);
       await vault.connect(user1).deployToAave(initialAllocation);
 
       // Update allocation
