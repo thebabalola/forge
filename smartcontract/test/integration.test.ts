@@ -140,4 +140,43 @@ describe("ForgeX Integration Tests", function () {
       expect(balanceAfter - balanceBefore).to.equal(redeemAmount);
     });
   });
+
+  describe("Journey 3: Multi-user Vault Sharing", function () {
+    let aliceVault: UserVault;
+    const bobsDeposit = ethers.parseUnits("500", 18);
+
+    before(async function () {
+      const aliceVaults = await vaultFactory.getUserVaults(alice.address);
+      aliceVault = await ethers.getContractAt("UserVault", aliceVaults[0]);
+    });
+
+    it("Bob should deposit into Alice's vault and get proportional shares", async function () {
+      // Alice's vault currently has 500 assets and 500 shares (1:1)
+      // Simulate yield (Alice's vault earns 100 USDC)
+      await asset.mint(await aliceVault.getAddress(), ethers.parseUnits("100", 18));
+      
+      // Total Assets = 600, Total Shares = 500. 
+      // Share Price = 1.2 Assets/Share
+      
+      await asset.connect(bob).approve(await aliceVault.getAddress(), bobsDeposit);
+      
+      const expectedShares = await aliceVault.previewDeposit(bobsDeposit);
+      // 500 * (500/600) = 416.666...
+      expect(expectedShares).to.be.lt(bobsDeposit);
+
+      await aliceVault.connect(bob).deposit(bobsDeposit, bob.address);
+      expect(await aliceVault.balanceOf(bob.address)).to.equal(expectedShares);
+    });
+
+    it("Bob should be able to withdraw his portion", async function () {
+      const bobsShares = await aliceVault.balanceOf(bob.address);
+      const expectedAssets = await aliceVault.previewRedeem(bobsShares);
+      
+      const bobBalanceBefore = await asset.balanceOf(bob.address);
+      await aliceVault.connect(bob).redeem(bobsShares, bob.address, bob.address);
+      const bobBalanceAfter = await asset.balanceOf(bob.address);
+      
+      expect(bobBalanceAfter - bobBalanceBefore).to.equal(expectedAssets);
+    });
+  });
 });
