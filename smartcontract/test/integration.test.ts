@@ -57,4 +57,39 @@ describe("ForgeX Integration Tests", function () {
     expect(await vaultFactory.getAaveAddress()).to.equal(await mockAave.getAddress());
     expect(await vaultFactory.getCompoundAddress()).to.equal(await mockCToken.getAddress());
   });
+
+  describe("Journey 1: Alice's First Vault", function () {
+    let aliceVault: UserVault;
+    const depositAmount = ethers.parseUnits("1000", 18);
+
+    it("Alice should register and create a vault", async function () {
+      // 1. Register
+      await vaultFactory.connect(alice).registerUser("alice", "DeFi Explorer");
+      expect(await vaultFactory.isUserRegistered(alice.address)).to.be.true;
+
+      // 2. Create Vault
+      const tx = await vaultFactory.connect(alice).createVault(
+        await asset.getAddress(),
+        "Alice Alpha Vault",
+        "AAV"
+      );
+      await tx.wait();
+
+      const aliceVaults = await vaultFactory.getUserVaults(alice.address);
+      expect(aliceVaults.length).to.equal(1);
+      
+      aliceVault = await ethers.getContractAt("UserVault", aliceVaults[0]);
+      expect(await aliceVault.name()).to.equal("Alice Alpha Vault");
+      expect(await aliceVault.owner()).to.equal(alice.address);
+    });
+
+    it("Alice should deposit assets and receive shares", async function () {
+      await asset.connect(alice).approve(await aliceVault.getAddress(), depositAmount);
+      await aliceVault.connect(alice).deposit(depositAmount, alice.address);
+
+      expect(await aliceVault.balanceOf(alice.address)).to.equal(depositAmount);
+      expect(await aliceVault.totalAssets()).to.equal(depositAmount);
+      expect(await asset.balanceOf(await aliceVault.getAddress())).to.equal(depositAmount);
+    });
+  });
 });
