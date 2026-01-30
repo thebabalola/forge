@@ -5,6 +5,7 @@ This file contains all GitHub issues for the ForgeX frontend. Each issue is read
 ## ✅ Completed Issues
 
 ### Issue #3: Styling, Accessibility & Responsiveness
+
 **Status:** ✅ COMPLETED  
 **Labels:** `frontend`, `ui/ux`, `design`  
 **Priority:** MEDIUM
@@ -13,41 +14,46 @@ This file contains all GitHub issues for the ForgeX frontend. Each issue is read
 ### Issue #1: Wallet Integration — Reown AppKit + Wagmi
 
 ### Issue #12: Vault Performance Analytics
-**Status:** ❌ PENDING  
+
+**Status:** 🔧 IN PROGRESS (branch: `thebabalola/forgeX-vault-analytics`)
 **Labels:** `frontend`, `feature`, `analytics`, `vaults`  
 **Priority:** LOW
 **Description:** Create analytics components showing vault performance over time.
 
 ### Issue #13: Transaction History & Activity Feed
+
 **Status:** ❌ PENDING  
 **Labels:** `frontend`, `feature`, `activity`  
 **Priority:** MEDIUM
 **Description:** Create a transaction history component showing all vault-related transactions.
 
 ### Issue #14: User Profile & Settings
+
 **Status:** ❌ PENDING  
 **Labels:** `frontend`, `feature`, `user`  
 **Priority:** LOW
 **Description:** Create a user profile page showing registered user information and settings.
 
 ### Issue #15: Admin Panel Interface
+
 **Status:** ❌ PENDING  
 **Labels:** `frontend`, `feature`, `admin`  
 **Priority:** LOW
 **Description:** Create an admin panel for managing protocol addresses and platform statistics.
 
 ### Issue #16: Error Handling & User Feedback
+
 **Status:** ❌ PENDING  
 **Labels:** `frontend`, `infrastructure`, `ux`  
 **Priority:** MEDIUM
 **Description:** Implement comprehensive error handling, toast notifications, and error boundaries.
 
 ### Issue #17: Testing & Quality Assurance
+
 **Status:** ❌ PENDING  
 **Labels:** `frontend`, `testing`, `quality`  
 **Priority:** MEDIUM
 **Description:** Set up comprehensive testing infrastructure including unit, integration, and E2E tests.
-
 
 ---
 
@@ -58,9 +64,9 @@ When creating new issues, use this template:
 ```markdown
 ### Issue #<number>: <Title>
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `<label1>`, `<label2>`  
+**Labels:** `<label1>`, `<label2>`
 
 **Priority:** HIGH | MEDIUM | LOW
 
