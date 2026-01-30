@@ -13,7 +13,7 @@ This file contains all GitHub issues for the ForgeX frontend. Each issue is read
 ### Issue #1: Wallet Integration — Reown AppKit + Wagmi
 
 ### Issue #12: Vault Performance Analytics
-**Status:** ❌ PENDING  
+**Status:** 🔧 IN PROGRESS (branch: `thebabalola/forgeX-vault-analytics`)
 **Labels:** `frontend`, `feature`, `analytics`, `vaults`  
 **Priority:** LOW
 **Description:** Create analytics components showing vault performance over time.
